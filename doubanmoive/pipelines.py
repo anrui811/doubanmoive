@@ -6,6 +6,7 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import json
 import codecs
+import types
 
 
 class DoubanmoivePipeline(object):
@@ -14,7 +15,7 @@ class DoubanmoivePipeline(object):
 
     def process_item(self, item, spider):
         mydict = {}
-        mydict.update({'name': item['name'][0], 'score': item['score'][0], 'classification': item['classification'],
+        mydict.update({'name': item['name'][0], 'score': item['score'], 'classification': item['classification'],
                        'director': item['director'], 'actor': item['actor'], 'year': item['year']})
         line = json.dumps(mydict) + '\n'
         self.file.write(line.decode("unicode_escape"))
