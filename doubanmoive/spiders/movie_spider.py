@@ -4,7 +4,8 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from doubanmoive.doubanmoiveItem import DoubanmoiveItem
 from doubanmoive.movieCommnetItem import MovieCommentItem
-from scrapy.http import Request
+from scrapy.http import Request,FormRequest
+
 import sys
 import re
 
@@ -21,8 +22,29 @@ class MoiveSpider(CrawlSpider):
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E5%8D%8E%E8%AF%AD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9]+&limit=20&sort=new_score$')),callback="parse_comments", follow=True)
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
     ]
+
+    def start_requests(self):
+        return [Request('https://www.douban.com/accounts/login',
+                        meta={'cookiejar': 1},
+                        callback=self.post_login)]
+
+    def post_login(self, response):
+        print 'Preparing login'
+        return [FormRequest.from_response(response,
+                                          meta={'cookiejar': response.meta['cookiejar']},
+                                          formdata={
+                                              'form_email': '877279443@qq.com',
+                                              'form_password': 'AR12345678'
+                                          },
+                                          callback=self.after_login,
+                                          dont_filter=True)]
+
+    def after_login(self, response):
+        print 'after_login'
+        for url in self.start_urls:
+            yield self.make_requests_from_url(url)
 
     def parse_item(self, response):
         sel = Selector(response)
