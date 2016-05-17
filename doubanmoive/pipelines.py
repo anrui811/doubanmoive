@@ -7,6 +7,7 @@
 import json
 import codecs
 from doubanmoive.doubanmoiveItem import DoubanmoiveItem
+from doubanmoive.movieCommnetItem import MovieCommentItem
 
 class DoubanmoivePipeline(object):
     def __init__(self):
@@ -15,14 +16,10 @@ class DoubanmoivePipeline(object):
     def process_item(self, item, spider):
         item_type = type(item)
         if item_type is DoubanmoiveItem:
-            mydict = {}
-            mydict.update({'name': item['name'][0], 'score': item['score'], 'classification': item['classification'],
-                           'director': item['director'], 'actor': item['actor'], 'year': item['year'], 'id': item['id'], 'desc': item['desc']})
-            line = json.dumps(mydict) + '\n'
+            line = json.dumps(dict(item)) + '\n'
             self.file.write(line.decode("unicode_escape"))
-        # self.subject_file = codecs.open('./subjects/' + item['id'][0] + '.dat', mode='wb', encoding='utf-8')
-        # subject = {}
-        # subject.update({'name': item['name'][0], 'desc': item['desc']})
-        # sub_line = json.dumps(subject) + '\n'
-        # self.subject_file.write(sub_line.decode("unicode_escape"))
+        elif item_type is MovieCommentItem:
+            self.comment_file = codecs.open('./subjects/' + item['movie_id'] + '_comments.dat', mode='ab+', encoding='utf-8')
+            comment = json.dumps(dict(item)) + '\n'
+            self.comment_file.write(comment.decode("unicode_escape"))
         return item
