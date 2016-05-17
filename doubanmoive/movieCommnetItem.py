@@ -10,9 +10,10 @@ from scrapy.item import Item, Field
 
 class MovieCommentItem(Item):
     # define the fields for your item here like:
-    id = Field()
-    name = Field()
+    movie_id = Field()
+    speaker_id = Field()
+    speaker_name = Field()
     comment = Field()
     score = Field()
-    data = Field()
+    date = Field()
     useful_num = Field()

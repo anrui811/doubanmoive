@@ -49,44 +49,42 @@ class MoiveSpider(CrawlSpider):
     def parse_item(self, response):
         sel = Selector(response)
         item = DoubanmoiveItem()
-        self.get_id(response, item)
-        self.get_name(sel, item)
-        self.get_year(sel, item)
-        self.get_score(sel, item)
-        self.get_director(sel, item)
-        self.get_classification(sel, item)
-        self.get_actor(sel, item)
-        self.get_desc(sel, item)
-        # self.get_comment_url(sel, item)
-        # self.crawl_comment(sel, item)
+        self.get_movie_id(response, item)
+        self.get_movie_name(sel, item)
+        self.get_movie_year(sel, item)
+        self.get_movie_score(sel, item)
+        self.get_movie_director(sel, item)
+        self.get_movie_classification(sel, item)
+        self.get_movie_actor(sel, item)
+        self.get_movie_actor(sel, item)
         return item
 
-    def get_id(self, response, item):
+    def get_movie_id(self, response, item):
         page_link = response._url
         pattern = re.compile(r'\d+')
         item['id'] = pattern.findall(page_link)
 
-    def get_name(self, selector, item):
+    def get_movie_name(self, selector, item):
         name = selector.xpath('//*[@id="content"]/h1/span[1]/text()').extract()
         item['name'] = name
 
-    def get_year(self, selector, item):
+    def get_movie_year(self, selector, item):
         year = selector.xpath('//*[@id="content"]/h1/span[2]/text()').re(r'\((\d+)\)')
         item['year'] = year
 
-    def get_score(self, selector, item):
+    def get_movie_score(self, selector, item):
         score = selector.xpath('//*[@id="interest_sectl"]/div[1]/div[2]/strong/text()').extract()
         item['score'] = score
 
-    def get_director(self, selector, item):
+    def get_movie_director(self, selector, item):
         director = selector.xpath('//*[@id="info"]/span[1]/span[2]/a/text()').extract()
         item['director'] = director
 
-    def get_classification(self, selector, item):
+    def get_movie_classification(self, selector, item):
         classification = selector.xpath('//span[@property="v:genre"]/text()').extract()
         item['classification'] = classification
 
-    def get_actor(self, selector, item):
+    def get_movie_actor(self, selector, item):
         if selector.xpath('//*[@id="info"]/span[3]/span[2]/a/text()').extract():
             actor = selector.xpath('//*[@id="info"]/span[3]/span[2]/a/text()').extract()
         elif selector.xpath('//*[@id="info"]/span[2]/span[1]/text()').extract() \
@@ -96,7 +94,7 @@ class MoiveSpider(CrawlSpider):
             actor = []
         item['actor'] = actor
 
-    def get_desc(self, selector, item):
+    def get_movie_desc(self, selector, item):
         desc = selector.xpath('//*[@id="link-report"]/span[1]/text()').extract()
         item['desc'] = desc
 
