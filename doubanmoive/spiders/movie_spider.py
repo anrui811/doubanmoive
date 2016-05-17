@@ -17,7 +17,8 @@ class MoiveSpider(CrawlSpider):
     name = "doubanmovie"
     allowed_domains = ["movie.douban.com"]
     # 华语
-    start_urls = ["https://movie.douban.com/tag/%E5%8D%8E%E8%AF%AD"]
+    # start_urls = ["https://movie.douban.com/tag/%E5%8D%8E%E8%AF%AD"]
+    start_urls = ["https://movie.douban.com/subject/10831445/comments"]
     rules = [
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E5%8D%8E%E8%AF%AD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
@@ -56,7 +57,7 @@ class MoiveSpider(CrawlSpider):
         self.get_movie_director(sel, item)
         self.get_movie_classification(sel, item)
         self.get_movie_actor(sel, item)
-        self.get_movie_actor(sel, item)
+        self.get_movie_desc(sel, item)
         return item
 
     def get_movie_id(self, response, item):
@@ -99,7 +100,21 @@ class MoiveSpider(CrawlSpider):
         item['desc'] = desc
 
     def parse_comments(self, response):
-        commentItem = MovieCommentItem()
         sel = Selector(response)
-        commentItem['name'] = sel.xpath('//*[@id="comments"]/div[1]/div[2]/h3/span[2]/a/text()').extract()
-        return commentItem
+        url = response._url
+        movie_id = url.split('/')[-2]
+        commentItems = sel.xpath('//*[@class="comment-item"]').extract()
+        comments = []
+        for commentItem in commentItems:
+            item = MovieCommentItem()
+            item['movie_id'] = movie_id
+            item['speaker_id'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/@href').extract()[0].split('/')[-2]
+            item['speaker_name'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/text()').extract()[0]
+            score_class = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[1]/@class').extract()[0]
+            pattern = re.compile(r'\d+')
+            item['score'] = pattern.findall(score_class)[0]
+            item['comment'] = Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract()[0]
+            item['date'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract()[0].strip()
+            item['useful_num'] = Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
+            comments.append(item)
+        return comments
