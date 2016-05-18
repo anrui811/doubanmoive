@@ -2,10 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7c35979b-7d3d-43a4-8c5e-b9baf238af9b" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/data.dat" afterPath="$PROJECT_DIR$/data.dat" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/doubanmoive/pipelines.py" afterPath="$PROJECT_DIR$/doubanmoive/pipelines.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/doubanmoive/spiders/movie_spider.py" afterPath="$PROJECT_DIR$/doubanmoive/spiders/movie_spider.py" />
     </list>
     <ignored path="doubanmoive.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -57,8 +56,8 @@
       <file leaf-file-name="pipelines.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/doubanmoive/pipelines.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="450">
-              <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
+            <state relative-caret-position="435">
+              <caret line="29" column="19" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
               <folding>
                 <element signature="e#192#203#0" expanded="true" />
               </folding>
@@ -114,8 +113,8 @@
         <option value="$PROJECT_DIR$/data.dat" />
         <option value="$PROJECT_DIR$/doubanmoive/movieReviewItem.py" />
         <option value="$PROJECT_DIR$/doubanmoive/movieCommnetItem.py" />
-        <option value="$PROJECT_DIR$/doubanmoive/pipelines.py" />
         <option value="$PROJECT_DIR$/doubanmoive/spiders/movie_spider.py" />
+        <option value="$PROJECT_DIR$/doubanmoive/pipelines.py" />
       </list>
     </option>
   </component>
@@ -891,8 +890,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/doubanmoive/pipelines.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="450">
-          <caret line="30" column="0" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="0" />
+        <state relative-caret-position="435">
+          <caret line="29" column="19" selection-start-line="29" selection-start-column="19" selection-end-line="29" selection-end-column="19" />
           <folding>
             <element signature="e#192#203#0" expanded="true" />
           </folding>
