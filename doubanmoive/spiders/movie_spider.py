@@ -4,6 +4,7 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from doubanmoive.doubanmoiveItem import DoubanmoiveItem
 from doubanmoive.movieCommnetItem import MovieCommentItem
+from doubanmoive.movieReviewItem import MovieReviewItem
 from scrapy.http import Request,FormRequest
 
 import sys
@@ -25,12 +26,16 @@ class MoiveSpider(CrawlSpider):
     #               "https://movie.douban.com/tag/%E4%B8%AD%E5%9B%BD%E5%A4%A7%E9%99%86", "https://movie.douban.com/tag/%E5%8D%B0%E5%BA%A6",
     #               "https://movie.douban.com/tag/%E5%86%85%E5%9C%B0", "https://movie.douban.com/tag/%E6%B3%B0%E5%9B%BD",
     #               "https://movie.douban.com/tag/%E8%A5%BF%E7%8F%AD%E7%89%99", "https://movie.douban.com/tag/%E6%AC%A7%E6%B4%B2"]
-    start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
+    # start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
+    start_urls = ["https://movie.douban.com/subject/25820460/"]
     rules = [
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews$'))),
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')),callback="parse_review"),
+        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
+        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
     ]
 
     def start_requests(self):
@@ -124,10 +129,30 @@ class MoiveSpider(CrawlSpider):
             if pattern.findall(score_class):
                 item['score'] = pattern.findall(score_class)[0]
             if Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract():
-                item['comment'] = Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract()[0].strip()
+                item['content'] = Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract()[0].strip()
             if Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract():
                 item['date'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract()[0].strip()
             if Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract():
                 item['useful_num'] = Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
             comments.append(item)
         return comments
+
+    def parse_review(self, response):
+        item = MovieReviewItem()
+        sel = Selector(response)
+        item['movie_id'] = sel.xpath('//*[@id="fixedInfo"]/div[1]/a/@href').extract()[0].split('/')[-2]
+        item['speaker_id'] = sel.xpath('//*[@id="content"]/div/div[1]/div/div/div[1]/p[1]/a[2]/@href').extract()[0].split('/')[-2]
+        item['speaker_name'] = sel.xpath('//*[@property="v:reviewer"]/text()').extract()[0]
+        item['title'] = sel.xpath('//*[@id="content"]/h1/span/text()').extract()[0]
+        item['score'] = sel.xpath('//*[@property="v:rating"]/text()').extract()[0]
+        item['date'] = sel.xpath('//*[@property="v:dtreviewed"]/text()').extract()[0]
+        if sel.xpath('//*[@class="main-panel-useful"]/span[1]/em/text()').extract():
+            item['useful_num'] = sel.xpath('//*[@class="main-panel-useful"]/span[1]/em/text()').extract()[0]
+        else:
+            item['useful_num'] = 0
+        if sel.xpath('//*[@class="main-panel-useful"]/span[2]/em/text()').extract():
+            item['useless_num'] = sel.xpath('//*[@class="main-panel-useful"]/span[2]/em/text()').extract()[0]
+        else:
+            item['useless_num'] = 0
+        item['content'] = sel.xpath('//*[@id="link-report"]/div/text()').extract()
+        return item
