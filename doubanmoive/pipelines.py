@@ -8,6 +8,7 @@ import json
 import codecs
 from doubanmoive.doubanmoiveItem import DoubanmoiveItem
 from doubanmoive.movieCommnetItem import MovieCommentItem
+from doubanmoive.movieReviewItem import MovieReviewItem
 
 class DoubanmoivePipeline(object):
     def __init__(self):
@@ -19,7 +20,11 @@ class DoubanmoivePipeline(object):
             line = json.dumps(dict(item)) + '\n'
             self.file.write(line.decode("unicode_escape"))
         elif item_type is MovieCommentItem:
-            self.comment_file = codecs.open('./subjects/' + item['movie_id'] + '_comments.dat', mode='ab+', encoding='utf-8')
+            self.comment_file = codecs.open('./subjects/comments/' + item['movie_id'] + '_comments.dat', mode='ab+', encoding='utf-8')
             comment = json.dumps(dict(item)) + '\n'
             self.comment_file.write(comment.decode("unicode_escape"))
+        elif item_type is MovieReviewItem:
+            self.review_file = codecs.open('./subjects/reviews/' + item['movie_id'] + '_review.dat', mode='ab+', encoding='utf-8')
+            line = json.dumps(dict(item)) + '\n'
+            self.review_file.write(line.decode("unicode_escape"))
         return item

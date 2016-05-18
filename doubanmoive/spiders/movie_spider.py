@@ -26,16 +26,16 @@ class MoiveSpider(CrawlSpider):
     #               "https://movie.douban.com/tag/%E4%B8%AD%E5%9B%BD%E5%A4%A7%E9%99%86", "https://movie.douban.com/tag/%E5%8D%B0%E5%BA%A6",
     #               "https://movie.douban.com/tag/%E5%86%85%E5%9C%B0", "https://movie.douban.com/tag/%E6%B3%B0%E5%9B%BD",
     #               "https://movie.douban.com/tag/%E8%A5%BF%E7%8F%AD%E7%89%99", "https://movie.douban.com/tag/%E6%AC%A7%E6%B4%B2"]
-    # start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
-    start_urls = ["https://movie.douban.com/subject/25820460/"]
+    start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
+    # start_urls = ["https://movie.douban.com/subject/25820460/"]
     rules = [
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews$'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')),callback="parse_review"),
-        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
-        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
     ]
 
     def start_requests(self):
