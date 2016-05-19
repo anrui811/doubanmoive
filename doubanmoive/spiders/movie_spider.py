@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import urllib
+
+from bs4 import BeautifulSoup
 from scrapy.selector import Selector
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from doubanmoive.doubanmoiveItem import DoubanmoiveItem
 from doubanmoive.movieCommnetItem import MovieCommentItem
 from doubanmoive.movieReviewItem import MovieReviewItem
-from scrapy.http import Request,FormRequest
+from scrapy.http import Request, FormRequest
 
 import sys
 import re
@@ -27,34 +30,70 @@ class MoiveSpider(CrawlSpider):
     #               "https://movie.douban.com/tag/%E5%86%85%E5%9C%B0", "https://movie.douban.com/tag/%E6%B3%B0%E5%9B%BD",
     #               "https://movie.douban.com/tag/%E8%A5%BF%E7%8F%AD%E7%89%99", "https://movie.douban.com/tag/%E6%AC%A7%E6%B4%B2"]
     start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
-    # start_urls = ["https://movie.douban.com/subject/25820460/"]
+
     rules = [
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews$'))),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')),callback="parse_review"),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments", follow=True),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),callback="parse_comments", follow=True)
+        Rule(LinkExtractor(
+            allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')), callback="parse_review"),
+        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments",
+             follow=True),
+        Rule(LinkExtractor(
+            allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),
+             callback="parse_comments", follow=True)
     ]
 
-    def start_requests(self):
-        return [Request('https://www.douban.com/accounts/login',
-                        cookies={'viewed':'1770782','__utmv':'30149280.14592'},
-                        callback=self.after_login)]
+    def __init__(self):
+        super(MoiveSpider, self).__init__()
+        self.http_user = '877279443@qq.com'
+        self.http_pass = 'AR12345678'
+        self.formdata = {"redir": "https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD",
+                         "form_email": '877279443@qq.com',
+                         "form_password": 'AR12345678',
+                         "login": u'登录'
+                         }
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0',
+                        'Accept-Encoding': 'gzip, deflate',
+                        'Accept-Language': 'zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3',
+                        'Connection': 'keep-alive'
+                        }
 
-    # def post_login(self, response):
-    #     print 'Preparing login'
-    #     return [FormRequest.from_response(response,
-    #                                       formdata={
-    #                                           'form_email': '877279443@qq.com',
-    #                                           'form_password': 'AR12345678'
-    #                                       },
-    #                                       callback=self.after_login,
-    #                                       dont_filter=True)]
+    def start_requests(self):
+        yield Request('https://www.douban.com/accounts/login',
+                      meta={'cookiejar': 1},
+                      headers=self.headers,
+                      callback=self.post_login
+                      )
+
+    def post_login(self, response):
+        print 'Preparing login'
+        self.get_captcha(response)
+        return FormRequest.from_response(response,
+                                         headers=self.headers,
+                                         formdata=self.formdata,
+                                         callback=self.after_login,
+                                         dont_filter=True)
+
+    def get_captcha(self, response):
+        print 'get_captcha'
+        page = response.text
+        soup = BeautifulSoup(page, "html.parser")
+        captchaAddr = soup.find('img', id='captcha_image')['src']
+
+        reCaptchaID = r'<input type="hidden" name="captcha-id" value="(.*?)"/'
+        captchaID = re.findall(reCaptchaID, page)
+
+        urllib.urlretrieve(captchaAddr, "captcha.jpg")
+        captcha = raw_input('please input the captcha:')
+
+        self.formdata['captcha-solution'] = captcha
+        self.formdata['captcha-id'] = captchaID
 
     def after_login(self, response):
         print 'after_login'
+        print response.url
         for url in self.start_urls:
             yield self.make_requests_from_url(url)
 
@@ -122,18 +161,22 @@ class MoiveSpider(CrawlSpider):
         for commentItem in commentItems:
             item = MovieCommentItem()
             item['movie_id'] = movie_id
-            item['speaker_id'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/@href').extract()[0].split('/')[-2]
+            item['speaker_id'] = \
+            Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/@href').extract()[0].split('/')[-2]
             item['speaker_name'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/text()').extract()[0]
             score_class = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[1]/@class').extract()[0]
             pattern = re.compile(r'\d+')
             if pattern.findall(score_class):
                 item['score'] = pattern.findall(score_class)[0]
             if Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract():
-                item['content'] = Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract()[0].strip()
+                item['content'] = Selector(text=commentItem).xpath('//*[@class="comment"]/p/text()').extract()[
+                    0].strip()
             if Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract():
-                item['date'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract()[0].strip()
+                item['date'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[2]/text()').extract()[
+                    0].strip()
             if Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract():
-                item['useful_num'] = Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
+                item['useful_num'] = \
+                Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
             comments.append(item)
         return comments
 
@@ -141,7 +184,8 @@ class MoiveSpider(CrawlSpider):
         item = MovieReviewItem()
         sel = Selector(response)
         item['movie_id'] = sel.xpath('//*[@id="fixedInfo"]/div[1]/a/@href').extract()[0].split('/')[-2]
-        item['speaker_id'] = sel.xpath('//*[@id="content"]/div/div[1]/div/div/div[1]/p[1]/a[2]/@href').extract()[0].split('/')[-2]
+        item['speaker_id'] = \
+        sel.xpath('//*[@id="content"]/div/div[1]/div/div/div[1]/p[1]/a[2]/@href').extract()[0].split('/')[-2]
         item['speaker_name'] = sel.xpath('//*[@property="v:reviewer"]/text()').extract()[0]
         item['title'] = sel.xpath('//*[@id="content"]/h1/span/text()').extract()[0]
         item['score'] = sel.xpath('//*[@property="v:rating"]/text()').extract()[0]
