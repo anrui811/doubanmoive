@@ -80,16 +80,17 @@ class MoiveSpider(CrawlSpider):
         print 'get_captcha'
         page = response.text
         soup = BeautifulSoup(page, "html.parser")
-        captchaAddr = soup.find('img', id='captcha_image')['src']
+        if soup.find('img', id='captcha_image') != None:
+            captchaAddr = soup.find('img', id='captcha_image')['src']
 
-        reCaptchaID = r'<input type="hidden" name="captcha-id" value="(.*?)"/'
-        captchaID = re.findall(reCaptchaID, page)
+            reCaptchaID = r'<input type="hidden" name="captcha-id" value="(.*?)"/'
+            captchaID = re.findall(reCaptchaID, page)
 
-        urllib.urlretrieve(captchaAddr, "captcha.jpg")
-        captcha = raw_input('please input the captcha:')
+            urllib.urlretrieve(captchaAddr, "captcha.jpg")
+            captcha = raw_input('please input the captcha:')
 
-        self.formdata['captcha-solution'] = captcha
-        self.formdata['captcha-id'] = captchaID
+            self.formdata['captcha-solution'] = captcha
+            self.formdata['captcha-id'] = captchaID
 
     def after_login(self, response):
         print 'after_login'
