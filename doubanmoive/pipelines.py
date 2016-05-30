@@ -33,7 +33,7 @@ class DoubanmoivePipeline(object):
         elif item_type is MovieReviewItem:
             filename = item['movie_id'] + '_review.dat'
             if filename not in self.review_file_dict.keys():
-                self.review_file = codecs.open('./subjects/comments/' + filename, mode='wb', encoding='utf-8')
+                self.review_file = codecs.open('./subjects/reviews/' + filename, mode='wb', encoding='utf-8')
                 self.review_file_dict[filename] = self.review_file
             else:
                 self.review_file = self.review_file_dict[filename]
