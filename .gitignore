@@ -1,4 +1,6 @@
 *.dat
 .idea/workspace.xml
 captcha.jpg
-
+ltp_data/
+moviespider-1/
+*.pyc
