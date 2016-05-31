@@ -30,19 +30,18 @@ class MoiveSpider(CrawlSpider):
     #               "https://movie.douban.com/tag/%E5%86%85%E5%9C%B0", "https://movie.douban.com/tag/%E6%B3%B0%E5%9B%BD",
     #               "https://movie.douban.com/tag/%E8%A5%BF%E7%8F%AD%E7%89%99", "https://movie.douban.com/tag/%E6%AC%A7%E6%B4%B2"]
     start_urls = ["https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD"]
-
     rules = [
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/tag/%E7%BE%8E%E5%9B%BD?.*'))),
         Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/$')), callback="parse_item", follow=True),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews$'))),
-        Rule(LinkExtractor(
-            allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')), callback="parse_review"),
-        Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments",
-             follow=True),
-        Rule(LinkExtractor(
-            allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),
-             callback="parse_comments", follow=True)
+        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/reviews$'))),
+        # Rule(LinkExtractor(
+        #     allow=(r'https://movie.douban.com/subject/\d+/reviews\?start=[1-9][0-9]*\&filter=\&limit=20'))),
+        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/review/\d+/$')), callback="parse_review"),
+        # Rule(LinkExtractor(allow=(r'https://movie.douban.com/subject/\d+/comments$')), callback="parse_comments",
+        #      follow=True),
+        # Rule(LinkExtractor(
+        #     allow=(r'https://movie.douban.com/subject/\d+/comments\?start=[1-9][0-9]*\&limit=20\&sort=new_score$')),
+        #      callback="parse_comments", follow=True)
     ]
 
     def __init__(self):
@@ -109,6 +108,7 @@ class MoiveSpider(CrawlSpider):
         self.get_movie_classification(sel, item)
         self.get_movie_actor(sel, item)
         self.get_movie_desc(sel, item)
+        self.get_alias(sel, item)
         return item
 
     def get_movie_id(self, response, item):
@@ -150,8 +150,24 @@ class MoiveSpider(CrawlSpider):
         item['actor'] = actor
 
     def get_movie_desc(self, selector, item):
-        desc = selector.xpath('//*[@id="link-report"]/span[1]/text()').extract()[0]
-        item['desc'] = desc
+        if selector.xpath('//*[@id="link-report"]/span[1]/text()').extract():
+            desc = selector.xpath('//*[@id="link-report"]/span[1]/text()').extract()[0].strip()
+            if not desc:
+                desc = selector.xpath('//*[@id="link-report"]/span[@class="all hidden"]/text()').extract()[0].strip()
+            item['desc'] = desc
+        else:
+            item['desc'] = []
+
+
+    def get_alias(self, selector, item):
+        text = selector.xpath('//*[@id="info"]/text()').extract()
+        if len(text) > 19 and text[-4].strip():
+            alias = text[-4]
+        elif len(text) > 19 and text[-6].strip():
+            alias = text[-6]
+        else:
+            alias = []
+        item['alias'] = alias
 
     def parse_comments(self, response):
         sel = Selector(response)

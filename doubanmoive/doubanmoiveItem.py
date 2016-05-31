@@ -20,3 +20,4 @@ class DoubanmoiveItem(Item):
     desc = Field()
     comments = Field()
     reviews = Field()
+    alias = Field()

@@ -30,6 +30,7 @@ class DoubanmoivePipeline(object):
                 self.comment_file = self.comment_file_dict[filename]
             comment = json.dumps(dict(item)) + '\n'
             self.comment_file.write(comment.decode("unicode_escape"))
+            # self.comment_file.flush()
         elif item_type is MovieReviewItem:
             filename = item['movie_id'] + '_review.dat'
             if filename not in self.review_file_dict.keys():
@@ -39,4 +40,5 @@ class DoubanmoivePipeline(object):
                 self.review_file = self.review_file_dict[filename]
             line = json.dumps(dict(item)) + '\n'
             self.review_file.write(line.decode("unicode_escape"))
+            # self.review_file.flush()
         return item
