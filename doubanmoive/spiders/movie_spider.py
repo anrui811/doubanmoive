@@ -102,13 +102,15 @@ class MoiveSpider(CrawlSpider):
         item = DoubanmoiveItem()
         self.get_movie_id(response, item)
         self.get_movie_name(sel, item)
+        self.get_alias(sel, item)
         self.get_movie_year(sel, item)
+        self.get_initial_release_date(sel, item)
         self.get_movie_score(sel, item)
         self.get_movie_director(sel, item)
+        self.get_screenwriter(sel, item)
         self.get_movie_classification(sel, item)
         self.get_movie_actor(sel, item)
         self.get_movie_desc(sel, item)
-        self.get_alias(sel, item)
         return item
 
     def get_movie_id(self, response, item):
@@ -121,8 +123,17 @@ class MoiveSpider(CrawlSpider):
         item['name'] = name
 
     def get_movie_year(self, selector, item):
-        year = selector.xpath('//*[@id="content"]/h1/span[2]/text()').re(r'\((\d+)\)')[0]
-        item['year'] = year
+        if selector.xpath('//*[@id="content"]/h1/span[2]/text()').re(r'\((\d+)\)'):
+            year = selector.xpath('//*[@id="content"]/h1/span[2]/text()').re(r'\((\d+)\)')[0]
+            item['year'] = year
+        else:
+            item['year'] = []
+
+    def get_initial_release_date(self, selector, item):
+        if selector.xpath('//*[@id="info"]/span[@property="v:initialReleaseDate"]/text()').extract():
+            item['initialReleaseDate'] = selector.xpath('//*[@id="info"]/span[@property="v:initialReleaseDate"]/text()').extract()[0]
+        else:
+            item['initialReleaseDate'] = []
 
     def get_movie_score(self, selector, item):
         if selector.xpath('//*[@id="interest_sectl"]/div[1]/div[2]/strong/text()').extract():
@@ -132,38 +143,63 @@ class MoiveSpider(CrawlSpider):
         item['score'] = score
 
     def get_movie_director(self, selector, item):
-        director = selector.xpath('//*[@id="info"]/span[1]/span[2]/a/text()').extract()
-        item['director'] = director
+        if selector.xpath('//*[@id="info"]/span[1]/span[1]/text()').extract() and \
+                        selector.xpath('//*[@id="info"]/span[1]/span[1]/text()').extract()[0] == unicode('导演'):
+            director = selector.xpath('//*[@id="info"]/span[1]/span[2]/a/text()').extract()
+            item['director'] = director
+        else:
+            item['director'] = []
+
+    def get_screenwriter(self, selector, item):
+        if selector.xpath('//*[@id="info"]/span[1]/span[1]/text()').extract() and \
+                        selector.xpath('//*[@id="info"]/span[1]/span[1]/text()').extract()[0] == unicode('编剧'):
+            screenwriter = selector.xpath('//*[@id="info"]/span[1]/span[2]/a/text()').extract()
+            item['screenwriter'] = screenwriter
+        elif selector.xpath('//*[@id="info"]/span[2]/span[1]/text()').extract() and \
+                        selector.xpath('//*[@id="info"]/span[2]/span[1]/text()').extract()[0] == unicode('编剧'):
+            screenwriter = selector.xpath('//*[@id="info"]/span[2]/span[2]/a/text()').extract()
+            item['screenwriter'] = screenwriter
+        else:
+            item['screenwriter'] = []
 
     def get_movie_classification(self, selector, item):
         classification = selector.xpath('//span[@property="v:genre"]/text()').extract()
         item['classification'] = classification
 
     def get_movie_actor(self, selector, item):
-        if selector.xpath('//*[@id="info"]/span[3]/span[2]/a/text()').extract():
-            actor = selector.xpath('//*[@id="info"]/span[3]/span[2]/a/text()').extract()
+        if selector.xpath('//*[@id="info"]/span[1]/span[1]/text()').extract()[0] == unicode('主演'):
+            actor = selector.xpath('//*[@id="info"]/span[1]/span[2]/a/text()').extract()
         elif selector.xpath('//*[@id="info"]/span[2]/span[1]/text()').extract() \
                 and selector.xpath('//*[@id="info"]/span[2]/span[1]/text()').extract()[0] == unicode('主演'):
             actor = selector.xpath('//*[@id="info"]/span[2]/span[2]/a/text()').extract()
+        elif selector.xpath('//*[@id="info"]/span[3]/span[1]/text()').extract() and \
+                        selector.xpath('//*[@id="info"]/span[3]/span[1]/text()').extract()[0] == unicode('主演'):
+            actor = selector.xpath('//*[@id="info"]/span[3]/span[2]/a/text()').extract()
         else:
             actor = []
         item['actor'] = actor
 
     def get_movie_desc(self, selector, item):
-        if selector.xpath('//*[@id="link-report"]/span[1]/text()').extract():
-            desc = selector.xpath('//*[@id="link-report"]/span[1]/text()').extract()[0].strip()
-            if not desc:
-                desc = selector.xpath('//*[@id="link-report"]/span[@class="all hidden"]/text()').extract()[0].strip()
+        if selector.xpath('//*[@id="link-report"]/span[@class="all hidden"]/text()').extract():
+            desc_list = selector.xpath('//*[@id="link-report"]/span[@class="all hidden"]/text()').extract()
+            desc = ''
+            for m in desc_list:
+                desc += m.strip()
+            item['desc'] = desc
+        elif selector.xpath('//*[@id="link-report"]/span[@property="v:summary"]/text()').extract():
+            desc_list = selector.xpath('//*[@id="link-report"]/span[@property="v:summary"]/text()').extract()
+            desc = ''
+            for m in desc_list:
+                desc += m.strip()
             item['desc'] = desc
         else:
             item['desc'] = []
 
-
     def get_alias(self, selector, item):
         text = selector.xpath('//*[@id="info"]/text()').extract()
-        if len(text) > 19 and text[-4].strip():
+        if len(text) > 21 and text[-4].strip():
             alias = text[-4]
-        elif len(text) > 19 and text[-6].strip():
+        elif len(text) > 21 and text[-6].strip():
             alias = text[-6]
         else:
             alias = []
@@ -179,7 +215,7 @@ class MoiveSpider(CrawlSpider):
             item = MovieCommentItem()
             item['movie_id'] = movie_id
             item['speaker_id'] = \
-            Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/@href').extract()[0].split('/')[-2]
+                Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/@href').extract()[0].split('/')[-2]
             item['speaker_name'] = Selector(text=commentItem).xpath('//*[@class="comment-info"]/a/text()').extract()[0]
             score_class = Selector(text=commentItem).xpath('//*[@class="comment-info"]/span[1]/@class').extract()[0]
             pattern = re.compile(r'\d+')
@@ -193,7 +229,7 @@ class MoiveSpider(CrawlSpider):
                     0].strip()
             if Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract():
                 item['useful_num'] = \
-                Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
+                    Selector(text=commentItem).xpath('//*[@class="comment-vote"]/span/text()').extract()[0]
             comments.append(item)
         return comments
 
@@ -202,7 +238,7 @@ class MoiveSpider(CrawlSpider):
         sel = Selector(response)
         item['movie_id'] = sel.xpath('//*[@id="fixedInfo"]/div[1]/a/@href').extract()[0].split('/')[-2]
         item['speaker_id'] = \
-        sel.xpath('//*[@id="content"]/div/div[1]/div/div/div[1]/p[1]/a[2]/@href').extract()[0].split('/')[-2]
+            sel.xpath('//*[@id="content"]/div/div[1]/div/div/div[1]/p[1]/a[2]/@href').extract()[0].split('/')[-2]
         item['speaker_name'] = sel.xpath('//*[@property="v:reviewer"]/text()').extract()[0]
         item['title'] = sel.xpath('//*[@id="content"]/h1/span/text()').extract()[0]
         item['score'] = sel.xpath('//*[@property="v:rating"]/text()').extract()[0]

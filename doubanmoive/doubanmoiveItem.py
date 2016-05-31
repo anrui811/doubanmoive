@@ -21,3 +21,5 @@ class DoubanmoiveItem(Item):
     comments = Field()
     reviews = Field()
     alias = Field()
+    screenwriter = Field()
+    initialReleaseDate = Field()
